@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DemoUnidosXFIS</title>
+
+    <!-- update the version number as needed -->
+    <script defer src="/__/firebase/6.2.0/firebase-app.js"></script>
+    <!-- include only the Firebase features as you need -->
+    <script defer src="/__/firebase/6.2.0/firebase-auth.js"></script>
+    <script defer src="/__/firebase/6.2.0/firebase-database.js"></script>
+    <script defer src="/__/firebase/6.2.0/firebase-functions.js"></script>
+    <script defer src="/__/firebase/6.2.0/firebase-messaging.js"></script>
+    <script defer src="/__/firebase/6.2.0/firebase-storage.js"></script>
+    <!-- initialize the SDK after all desired features are loaded -->
+    <script defer src="/__/firebase/init.js"></script>
+
+    <style media="screen">
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; white-space:nowrap;}
+      #webcam { position: relative;background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
+      #screenshots { overflow-y: scroll; position: absolute;background: white; width:200px ;height:400px; margin: -80px 10px 16px; padding: 32px 24px; border-radius: 3px; }
+      #screenshots img { width:100%; float:left; padding-top:17px;}
+      #webcam h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #webcam h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #webcam p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #webcam .a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #webcam, #webcam a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #webcam { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+    </style>
+  </head>
+  <body>
+
+    <div id="screenshots">
+
+    </div>
+    <div id="webcam">
+        <video onplay="onPlay(this)" id="inputVideo" autoplay muted style="width:100%;"></video>
+        <canvas id="overlay" style="position: absolute; top: 32px;left: 24px;"/></canvas>
+
+
+        <form>
+          <br><br><br>
+          <input id="label" type="text" name="label" placeholder="Nombre" required><br><br><br>
+          <button class="a" type="submit" name="button">Screenshot</button>
+        </form>
+
+    </div>
+
+
+
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="/js/faceapi.min.js"></script>
+    <script type="text/javascript" src="/js/app.js"></script>
+    <script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+      try {
+        let app = firebase.app
+        run()
+      } catch (e) {
+        console.error(e);
+      }
+    });
+    </script>
+  </body>
+</html>
