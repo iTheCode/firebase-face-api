@@ -8,21 +8,22 @@ This demo was made with [Firebase](https://github.com/firebase/) and  [Face-Api.
 ## Firebase Functions!
 Using Firebase Functions we optimize the time for processing all photos and save resources for client side.
 
-  - name: loadPhotos
- -- description: Return all data of photos in Firestore & Firebase storage.
-  - name: processor
-    -- description: Return all face descriptors from all photos for matchmaking in client site.
-  - name: savingPhotos
-    -- description: Receipt a base64, save original and processed photo on Firebase storage then save it on Firestore.
+  - Name: loadPhotos
+  - description: Return all data of photos in Firestore & Firebase storage.
+  - Name: processor
+  - description: Return all face descriptors from all photos for matchmaking in client site.
+  - Name: savingPhotos
+  - description: Receipt a base64, save original and processed photo on Firebase storage then save it on Firestore.
 
 ## Requirements
 - NPM or Yarn
+- Firebase CLI
 - Enthusiasm!
 
 ### Installation
 
 
-Install the dependencies and devDependencies and start the server.
+Clone and install all dependencies for functions.
 
 ```sh
 $ git clone https://github.com/iTheCode/firebase-face-api
