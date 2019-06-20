@@ -22,6 +22,11 @@ async function run() {
   await faceapi.loadFaceLandmarkModel(MODEL_URL)
   await faceapi.loadFaceRecognitionModel(MODEL_URL)
 
+
+  // Making some effects for fun.
+  $(".loader").fadeOut(1000)
+  $("#send").removeAttr('disabled')
+
   // try to access users webcam and stream the images
   // to the video element
   const input = document.getElementById('inputVideo')
@@ -45,21 +50,8 @@ async function run() {
 
 
   }).catch((e) => {
-      console.log(e);
+      console.log(e)
   })
-
-  // We need get all face descriptors after training on Firebase function
-  /*var processor = firebase.functions().httpsCallable('processor');
-  processor().then(function(result) {
-    // Read result of the Cloud Function.
-    var result = result.data
-
-    labeledFaceDescriptors = result.map( fd => {
-      return new faceapi.LabeledFaceDescriptors(fd.label, fd.faceDescriptors)
-    })
-
-
-  })*/
 
   // When trying to take a screenshot we need save it on firestore.
   $("form").submit((e) => {
@@ -73,9 +65,23 @@ async function run() {
     // Calling the function for saving and process data.
     screenshot_save(input, canvas)
 
+
     return false
   })
 
+
+  // We need get all face descriptors after training on Firebase function
+  var processor = firebase.functions().httpsCallable('processor');
+  processor({}).then(function(result) {
+    // Read result of the Cloud Function.
+    var result = result.data
+
+    labeledFaceDescriptors = result.map( fd => {
+      return new faceapi.LabeledFaceDescriptors(fd.label, fd.faceDescriptors)
+    })
+
+
+  })
 
 }
 
@@ -87,8 +93,10 @@ async function drawing_faces(overlay, fullFaceDescriptions){
   //Face Api Drawing Landmarks in the face.
   faceapi.draw.drawFaceLandmarks(overlay, fullFaceDescriptions, { lineWidth: 4, color: 'red' })
 }
-
 async function screenshot_save(input, canvas){
+
+  // Making effects
+  $("#send").text('Sending 3 photos for training model...').attr('disabled')
 
   // We need a label name for the face.
   var label = $('#label').val()
@@ -102,11 +110,13 @@ async function screenshot_save(input, canvas){
   var savingPhoto = firebase.functions().httpsCallable('savingPhoto');
   savingPhoto({label: label, photo: dataURI, displaySize: displaySize}).then(function(result) {
     // Read result of the Cloud Function.
-    console.log(result.data)
     var data = result.data
 
     // Showing screenshot saved
-    $("#screenshots").prepend('<img src="'+ data.image_original.src +'" onmouseover="this.src=\''+ data.image_landmark +'\'" onmouseout="this.src=\''+ data.image_original +'\'" alt="' + data.label+ '">')
+    $("#screenshots").prepend('<img src="'+ data.image_original +'" onmouseover="this.src=\''+ data.image_landmark +'\'" onmouseout="this.src=\''+ data.image_original +'\'" alt="' + data.label+ '">')
+
+    // Making effects
+    $("#send").text('Train Model').removeAttr('disabled')
 
     return true
 

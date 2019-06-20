@@ -7,16 +7,22 @@
 //    Email  : ithecode.ica@gmail.com
 //
 // //
-
+const tfjs = require('@tensorflow/tfjs-node')
 const firebase = require('firebase')
 const functions = require('firebase-functions')
 const admin = require('firebase-admin')
 const faceapi = require('face-api.js')
 const stream = require('stream')
-const Buffer= require('buffer/').Buffer
-const Canvas = require('canvas')
+const Buffer = require('buffer/').Buffer
+const canvas = require('canvas')
+const { Canvas, Image, ImageData } = canvas
 
 // -- Configuration Settings for Firebase and Firebase-admin --
+
+  // patch nodejs environment, we need to provide an implementation of
+  // HTMLCanvasElement and HTMLImageElement, additionally an implementation
+  // of ImageData is required, in case you want to use the MTCNN
+  faceapi.env.monkeyPatch({ Canvas, Image, ImageData })
 
   // Get This credential from https://console.cloud.google.com/apis/credentials/serviceaccountkey
   const serviceAccount = require("./keys/serviceaccount.json")
@@ -65,13 +71,19 @@ exports.processor = functions.https.onCall(async (data, context) => {
   await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_DIR)
   await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_DIR)
 
-  // Load all images frm firestore reusing the another function with null data.
-  var labels = this.loadPhotos({})
+  // Load all images from firestore reusing the another function with null data.
+  var labels = admin.firestore().collection('images').get()
+                  .then(snap => snap.docs.map(doc => {
+                      var obj = doc.data()
+                      obj.key = doc.id
+                      return obj
+                  }))
+                  .catch(e => e)
 
   const labeledFaceDescriptors = await Promise.all(
     labels.map(async label => {
       // fetch image data from urls and convert blob to HTMLImage element
-      const img = await faceapi.fetchImage(label.url)
+      const img = await canvas.loadImage(label.image_original)
 
       // detect the face with the highest score in the image and compute it's landmarks and face descriptor
       const fullFaceDescription = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor()
@@ -140,30 +152,25 @@ exports.savingPhoto = functions.https.onCall(async (data, context) => {
     })
   }
 
-
   // I need to convert the base64 to firebase storage url bucket.
   var image_original_url = await uploadPicture(data.photo.replace(/^data:image\/png;base64,/, ""), data.label)
 
-  // Creating a Canvas element for draw the faces.
-  var image_process = new Canvas.createCanvas()
-  const ctx = image_process.getContext('2d')
-
   // Loading image original from url.
-  const image_original = new Canvas.loadImage(image_original_url).then((image) => {
+  const image_original = await canvas.loadImage(image_original_url)
 
-    // Drawing my image from the firebase storage.
-    ctx.drawImage(image, 0, 0, data.displaySize.width, data.displaySize.height)
+  // Detecting all faces.
+  let fullFaceDescriptions = await faceapi.detectAllFaces(image_original).withFaceLandmarks().withFaceDescriptors()
 
-    // Detecting all faces.
-    let fullFaceDescriptions = faceapi.detectAllFaces(image_process).withFaceLandmarks().withFaceDescriptors()
-    fullFaceDescriptions = faceapi.resizeResults(fullFaceDescriptions, displaySize)
+  // Creating a Canvas element for draw the faces.
+  const image_process = faceapi.createCanvasFromMedia(image_original)
 
-    // Drawing Box & Landmarks
-    faceapi.draw.drawDetections(image_process, fullFaceDescriptions, { lineWidth: 4, color: 'blue' })
-    faceapi.draw.drawFaceLandmarks(image_process, fullFaceDescriptions, { lineWidth: 4, color: 'red' })
-  })
+  // Drawing Box & Landmarks
+  faceapi.draw.drawDetections(image_process, fullFaceDescriptions, { lineWidth: 4, color: 'blue' })
+  faceapi.draw.drawFaceLandmarks(image_process, fullFaceDescriptions, { lineWidth: 4, color: 'red' })
+
   // Getting base64 from new canvas processed.
   var dataURI = image_process.toDataURL('image/png')
+
   // Then we need to convert base64 to firebase storage url bucket.
   var image_landmark_url = await uploadPicture(dataURI.replace(/^data:image\/png;base64,/, ""), data.label)
 
@@ -172,12 +179,11 @@ exports.savingPhoto = functions.https.onCall(async (data, context) => {
   var data = {
     'label' : data.label,
     'image_original' : image_original_url,
-    'dataURI' : dataURI,
     'image_landmark' : image_landmark_url
   }
 
   // Saving the image in Firestore Realtime
-  //await admin.firestore().collection('images').add(data)
+  await admin.firestore().collection('images').add(data)
 
   // Returning data for be add on latest screenshot
   return data
